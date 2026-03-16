@@ -1,0 +1,144 @@
+@import "tailwindcss";
+
+:root {
+  --background: #fdfdfd;
+  --foreground: #0f172a;
+  --primary: #1e3a8a;
+  --primary-light: #3b82f6;
+  --accent: #d4af37; /* Noble gold */
+  --glass-bg: rgba(255, 255, 255, 0.65);
+  --glass-border: rgba(255, 255, 255, 0.3);
+  --shadow-premium: 0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 10px 10px -5px rgba(0, 0, 0, 0.02);
+}
+
+body {
+  background: radial-gradient(circle at top left, #f8fafc, #f1f5f9);
+  color: var(--foreground);
+  min-height: 100vh;
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+}
+
+/* Elegant italic title for "Posada Marinelys" */
+.title-elegant {
+  font-family: var(--font-playfair), "Georgia", serif !important;
+  font-style: italic !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.01em !important;
+}
+
+/* Glassmorphism / Liquid Crystal */
+.glass-morphism {
+  background: var(--glass-bg);
+  backdrop-filter: blur(12px) saturate(180%);
+  -webkit-backdrop-filter: blur(12px) saturate(180%);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--shadow-premium);
+}
+
+.auth-gradient {
+  background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 50%, #3b82f6 100%);
+  background-size: 200% 200%;
+  animation: gradientMove 15s ease infinite;
+}
+
+@keyframes gradientMove {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.premium-card {
+  background: white;
+  border-radius: 1.5rem;
+  border: 1px solid #f1f5f9;
+  box-shadow: var(--shadow-premium);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+}
+
+.premium-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.08);
+  border-color: #e2e8f0;
+}
+
+/* Animations */
+.animate-in-up {
+  animation: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Mobile Bottom Nav Shadow */
+.mobile-nav-shadow {
+  box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.06);
+}
+
+/* Force transparent layout backgrounds so the gradient is visible */
+.ant-layout,
+.ant-layout-content {
+  background: transparent !important;
+}
+
+/* Override Ant Design Sider background inside glass sidebar */
+.glass-morphism.ant-layout-sider {
+  background: var(--glass-bg) !important;
+  backdrop-filter: blur(12px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(12px) saturate(180%) !important;
+}
+
+.glass-morphism.ant-layout-sider .ant-layout-sider-children {
+  background: transparent !important;
+}
+
+/* Override Ant Design Header inside glass header */
+.ant-layout-header.glass-morphism {
+  background: rgba(255, 255, 255, 0.75) !important;
+  backdrop-filter: blur(14px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(14px) saturate(180%) !important;
+  line-height: normal !important;
+}
+
+/* Sidebar menu transparent background */
+.glass-morphism .ant-menu {
+  background: transparent !important;
+}
+
+.glass-morphism .ant-menu-item-selected {
+  background: rgba(30, 58, 138, 0.1) !important;
+  border-radius: 12px !important;
+}
+
+/* Body gradient - ensure it shows */
+html, body {
+  background: radial-gradient(ellipse at top left, #eef2ff 0%, #f8fafc 40%, #f1f5f9 100%) !important;
+  background-attachment: fixed !important;
+}
