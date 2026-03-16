@@ -20,6 +20,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const screens = useBreakpoint();
   const isMobile = !screens.md;
   const [user, setUser] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
   const router = useRouter();
   const pathname = usePathname();
 
@@ -28,11 +29,17 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   }, []);
 
   const checkUser = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        router.push('/login');
+      } else {
+        setUser(user);
+        setLoading(false);
+      }
+    } catch (error) {
+      console.error('Auth check error:', error);
       router.push('/login');
-    } else {
-      setUser(user);
     }
   };
 
@@ -77,6 +84,33 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       },
     ],
   };
+
+  if (loading) {
+    return (
+      <div className="h-screen w-screen flex flex-col items-center justify-center bg-[#fdfdfd]">
+        <div className="relative">
+          <div className="absolute inset-0 bg-blue-600/20 blur-2xl rounded-full animate-pulse" />
+          <img 
+            src="/logo.jpg" 
+            alt="Cargando..." 
+            className="w-24 h-24 rounded-full relative z-10 shadow-xl border-4 border-white animate-bounce"
+          />
+        </div>
+        <div className="mt-8 text-center">
+          <Title level={5} className="!text-blue-900 !m-0 tracking-widest uppercase text-[10px] font-black">Cargando Sistema</Title>
+          <div className="w-32 h-1 bg-blue-100 rounded-full mt-2 overflow-hidden mx-auto">
+            <div className="h-full bg-blue-900 animate-[loading_1.5s_infinite]" style={{ width: '40%' }} />
+          </div>
+        </div>
+        <style jsx>{`
+          @keyframes loading {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(300%); }
+          }
+        `}</style>
+      </div>
+    );
+  }
 
   return (
     <Layout className="min-h-screen bg-transparent">
