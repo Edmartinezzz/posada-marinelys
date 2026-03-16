@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Posada Marinelys</string>
+    <string name="title_activity_main">Posada Marinelys</string>
+    <string name="package_name">com.posada.marinelys</string>
+    <string name="custom_url_scheme">com.posada.marinelys</string>
+</resources>

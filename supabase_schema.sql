@@ -9,9 +9,12 @@ CREATE TABLE IF NOT EXISTS public.habitaciones (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Insert some default rooms
+-- Insert 18 rooms
 INSERT INTO public.habitaciones (nombre) VALUES 
-('Habitación 1'), ('Habitación 2'), ('Habitación 3'), ('Habitación 4'), ('Habitación 5')
+('Habitación 1'), ('Habitación 2'), ('Habitación 3'), ('Habitación 4'), ('Habitación 5'),
+('Habitación 6'), ('Habitación 7'), ('Habitación 8'), ('Habitación 9'), ('Habitación 10'),
+('Habitación 11'), ('Habitación 12'), ('Habitación 13'), ('Habitación 14'), ('Habitación 15'),
+('Habitación 16'), ('Habitación 17'), ('Habitación 18')
 ON CONFLICT DO NOTHING;
 
 -- Create reservas table
@@ -19,6 +22,9 @@ CREATE TABLE IF NOT EXISTS public.reservas (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   cliente_nombre TEXT NOT NULL,
   cliente_whatsapp TEXT,
+  adultos INTEGER DEFAULT 1,
+  ninos INTEGER DEFAULT 0,
+  tipo_habitacion TEXT,
   check_in TIMESTAMP WITH TIME ZONE NOT NULL,
   check_out TIMESTAMP WITH TIME ZONE NOT NULL,
   habitacion_id UUID REFERENCES public.habitaciones(id),

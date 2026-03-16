@@ -44,6 +44,9 @@ export default function CalendarPage() {
         habitacion_id,
         cliente_nombre,
         cliente_whatsapp,
+        adultos,
+        ninos,
+        tipo_habitacion,
         estado,
         habitaciones(nombre)
       `);
@@ -141,6 +144,9 @@ export default function CalendarPage() {
           .insert({
             cliente_nombre: values.nombre,
             cliente_whatsapp: values.whatsapp,
+            adultos: values.adultos,
+            ninos: values.ninos,
+            tipo_habitacion: values.tipo_habitacion,
             check_in: values.fechas[0].toISOString(),
             check_out: values.fechas[1].toISOString(),
             habitacion_id: habitacionId,
@@ -265,14 +271,21 @@ export default function CalendarPage() {
                 .map((res, idx) => (
                   <Card key={idx} size="small" className="border-l-4 border-l-blue-600 shadow-sm hover:shadow-md transition-shadow">
                     <div className="flex justify-between items-start">
-                      <Space orientation="vertical" size={2}>
+                      <Space direction="vertical" size={2}>
                         <Text strong className="text-blue-900 text-base">{res.cliente_nombre}</Text>
-                        <Text type="secondary" className="text-xs">
-                          <WhatsAppOutlined className="text-green-500 mr-1" />
-                          {res.cliente_whatsapp}
-                        </Text>
-                        <div className="mt-2 flex items-center gap-2">
-                          <Tag color="orange" className="font-bold">{(res.habitaciones as any)?.nombre}</Tag>
+                        <Space className="text-xs" split={<span className="text-gray-300">|</span>}>
+                          <Text type="secondary">
+                            <WhatsAppOutlined className="text-green-500 mr-1" />
+                            {res.cliente_whatsapp}
+                          </Text>
+                          <Text type="secondary" className="font-medium">
+                            {res.adultos} {res.adultos === 1 ? 'Adulto' : 'Adultos'}
+                            {res.ninos > 0 && `, ${res.ninos} ${res.ninos === 1 ? 'Niño' : 'Niños'}`}
+                          </Text>
+                        </Space>
+                        <div className="mt-2 flex items-center gap-2 flex-wrap">
+                          <Tag color="blue" className="font-bold m-0 italic">{res.tipo_habitacion}</Tag>
+                          <Tag color="orange" className="font-bold m-0">{(res.habitaciones as any)?.nombre}</Tag>
                           <Text className="text-[11px] font-medium bg-gray-100 px-2 py-0.5 rounded text-gray-600">
                             {dayjs(res.check_in).format('HH:mm')} → {dayjs(res.check_out).format('HH:mm')}
                           </Text>
@@ -313,6 +326,42 @@ export default function CalendarPage() {
                   rules={[{ required: true, message: 'Requerido' }]}
                 >
                   <Input prefix={<PhoneOutlined className="text-green-500" />} placeholder="Ej: +58 412 1234567" size="large" className="rounded-lg" />
+                </Form.Item>
+              </Col>
+            </Row>
+
+            <Row gutter={16}>
+              <Col span={8}>
+                <Form.Item
+                  name="adultos"
+                  label={<span className="font-semibold text-gray-700">Adultos</span>}
+                  initialValue={1}
+                  rules={[{ required: true }]}
+                >
+                  <Input prefix={<UserOutlined className="text-blue-500" />} type="number" min={1} size="large" className="rounded-lg" />
+                </Form.Item>
+              </Col>
+              <Col span={8}>
+                <Form.Item
+                  name="ninos"
+                  label={<span className="font-semibold text-gray-700">Niños</span>}
+                  initialValue={0}
+                >
+                  <Input prefix={<UserOutlined className="text-blue-200" />} type="number" min={0} size="large" className="rounded-lg" />
+                </Form.Item>
+              </Col>
+              <Col span={8}>
+                <Form.Item
+                  name="tipo_habitacion"
+                  label={<span className="font-semibold text-gray-700">Tipo de Hospedaje</span>}
+                  rules={[{ required: true, message: 'Selecciona' }]}
+                >
+                  <Select placeholder="Tipo" size="large" className="rounded-lg">
+                    <Option value="Matrimonial">Matrimonial</Option>
+                    <Option value="Triple">Triple</Option>
+                    <Option value="Doble">Doble</Option>
+                    <Option value="Familiar">Familiar</Option>
+                  </Select>
                 </Form.Item>
               </Col>
             </Row>
