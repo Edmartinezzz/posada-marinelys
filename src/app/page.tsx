@@ -363,23 +363,21 @@ export default function CalendarPage() {
   return (
     <AppLayout>
       <div className="max-w-6xl mx-auto space-y-6 animate-in fade-in duration-700">
-        <header className="flex justify-between items-end">
-          <div>
-            <Title level={2} className="!mb-0 !text-blue-900">Gestión de Disponibilidad</Title>
-            <Text type="secondary">Organiza las estadías y habitaciones de la posada</Text>
+        <header className="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-center">
+          <div className="min-w-0">
+            <Title level={3} className="!mb-0 !text-blue-900 truncate">Gestión de Disponibilidad</Title>
+            <Text type="secondary" className="text-sm">Organiza las estadías y habitaciones</Text>
           </div>
-          <div className="flex items-center gap-3">
-            <div className="flex gap-2">
-              <Tag color="error" className="px-4 py-1 rounded-full font-medium">Ocupado</Tag>
-              <Tag color="processing" className="px-4 py-1 rounded-full font-medium">Salida</Tag>
-              <Tag color="success" className="px-4 py-1 rounded-full font-medium">Disponible</Tag>
-            </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <Tag color="error" className="px-3 py-0.5 rounded-full font-medium text-xs">Ocupado</Tag>
+            <Tag color="processing" className="px-3 py-0.5 rounded-full font-medium text-xs">Salida</Tag>
+            <Tag color="success" className="px-3 py-0.5 rounded-full font-medium text-xs">Disponible</Tag>
             <Button
               type="primary"
               icon={<FilePdfOutlined />}
               onClick={() => setIsExportModalOpen(true)}
-              className="!bg-emerald-600 hover:!bg-emerald-700 !border-emerald-600 h-9 font-semibold shadow-md shadow-emerald-200"
-              size="middle"
+              className="!bg-emerald-600 hover:!bg-emerald-700 !border-emerald-600 h-8 font-semibold shadow-md shadow-emerald-200 text-xs"
+              size="small"
             >
               Exportar PDF
             </Button>
