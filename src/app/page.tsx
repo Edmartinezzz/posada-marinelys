@@ -449,8 +449,7 @@ export default function CalendarPage() {
             <div className="bg-amber-50 p-4 rounded-xl border border-amber-100 mt-6 flex items-start gap-3">
               <ClockCircleOutlined className="text-amber-600 mt-1" />
               <Text className="text-amber-800 text-xs leading-relaxed">
-                <strong>Nota:</strong> El check-in estándar es a las 14:00 y el check-out a las 12:00. 
-                Puedes ajustar estas horas si es necesario para esta reserva específica.
+                <strong>Nota:</strong> El check-in estándar es a las 14:00 y el check-out a las 12:00.
               </Text>
             </div>
           </Form>
