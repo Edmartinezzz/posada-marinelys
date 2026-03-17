@@ -287,9 +287,9 @@ export default function CalendarPage() {
                 .map((res, idx) => (
                   <Card key={idx} size="small" className="border-l-4 border-l-blue-600 shadow-sm hover:shadow-md transition-shadow">
                     <div className="flex justify-between items-start">
-                      <Space direction="vertical" size={2}>
+                      <Space orientation="vertical" size={2}>
                         <Text strong className="text-blue-900 text-base">{res.cliente_nombre}</Text>
-                        <Space className="text-xs" split={<span className="text-gray-300">|</span>}>
+                        <Space className="text-xs" separator={<span className="text-gray-300">|</span>}>
                           <Text type="secondary">
                             <WhatsAppOutlined className="text-green-500 mr-1" />
                             {res.cliente_whatsapp}
