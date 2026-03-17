@@ -13,6 +13,13 @@ const { Title, Text } = Typography;
 const { RangePicker } = DatePicker;
 const { Option } = Select;
 
+const ROOM_MAPPING: Record<string, string[]> = {
+  'Triple': ['Habitación 1', 'Habitación 2', 'Habitación 6', 'Habitación 9', 'Habitación 10'],
+  'Familiar': ['Habitación 12'],
+  'Matrimonial': ['Habitación 3', 'Habitación 4', 'Habitación 7', 'Habitación 8', 'Habitación 15', 'Habitación 17', 'Habitación 18'],
+  'Doble': ['Habitación 5', 'Habitación 16']
+};
+
 export default function CalendarPage() {
   const { message } = App.useApp();
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -23,6 +30,7 @@ export default function CalendarPage() {
   const [fileList, setFileList] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [currentView, setCurrentView] = useState<'details' | 'form'>('form');
+  const [selectedRoomType, setSelectedRoomType] = useState<string | null>(null);
 
   // Load data on mount
   React.useEffect(() => {
@@ -101,8 +109,11 @@ export default function CalendarPage() {
       // If empty, show new form directly
       setCurrentView('form');
       form.setFieldsValue({
-        fechas: [date.set('hour', 14).set('minute', 0), date.add(1, 'day').set('hour', 12).set('minute', 0)]
+        fechas: [date.startOf('day'), date.add(1, 'day').startOf('day')],
+        tipo_habitacion: null,
+        habitaciones: []
       });
+      setSelectedRoomType(null);
     }
     setIsModalOpen(true);
   };
@@ -147,8 +158,8 @@ export default function CalendarPage() {
             adultos: values.adultos,
             ninos: values.ninos,
             tipo_habitacion: values.tipo_habitacion,
-            check_in: values.fechas[0].toISOString(),
-            check_out: values.fechas[1].toISOString(),
+            check_in: values.fechas[0].startOf('day').add(14, 'hour').toISOString(),
+            check_out: values.fechas[1].startOf('day').add(12, 'hour').toISOString(),
             habitacion_id: habitacionId,
             comprobante_url: publicUrl,
             registrado_por: user?.id,
@@ -243,8 +254,11 @@ export default function CalendarPage() {
               // Delay to allow Form to mount
               setTimeout(() => {
                 form.setFieldsValue({
-                  fechas: [selectedDate?.set('hour', 14).set('minute', 0), selectedDate?.add(1, 'day').set('hour', 12).set('minute', 0)]
+                  fechas: [selectedDate?.startOf('day'), selectedDate?.add(1, 'day').startOf('day')],
+                  tipo_habitacion: null,
+                  habitaciones: []
                 });
+                setSelectedRoomType(null);
               }, 0);
             }}
           >
@@ -287,7 +301,7 @@ export default function CalendarPage() {
                           <Tag color="blue" className="font-bold m-0 italic">{res.tipo_habitacion}</Tag>
                           <Tag color="orange" className="font-bold m-0">{(res.habitaciones as any)?.nombre}</Tag>
                           <Text className="text-[11px] font-medium bg-gray-100 px-2 py-0.5 rounded text-gray-600">
-                            {dayjs(res.check_in).format('HH:mm')} → {dayjs(res.check_out).format('HH:mm')}
+                            {dayjs(res.check_in).format('DD/MM')} → {dayjs(res.check_out).format('DD/MM')}
                           </Text>
                         </div>
                       </Space>
@@ -356,7 +370,15 @@ export default function CalendarPage() {
                   label={<span className="font-semibold text-gray-700">Tipo de Hospedaje</span>}
                   rules={[{ required: true, message: 'Selecciona' }]}
                 >
-                  <Select placeholder="Tipo" size="large" className="rounded-lg">
+                  <Select 
+                    placeholder="Tipo" 
+                    size="large" 
+                    className="rounded-lg"
+                    onChange={(val) => {
+                      setSelectedRoomType(val);
+                      form.setFieldsValue({ habitaciones: [] });
+                    }}
+                  >
                     <Option value="Matrimonial">Matrimonial</Option>
                     <Option value="Triple">Triple</Option>
                     <Option value="Doble">Doble</Option>
@@ -372,8 +394,7 @@ export default function CalendarPage() {
               rules={[{ required: true, message: 'Selecciona las fechas' }]}
             >
               <RangePicker 
-                showTime={{ format: 'HH:mm' }}
-                format="YYYY-MM-DD HH:mm"
+                format="YYYY-MM-DD"
                 className="w-full h-11 rounded-lg"
                 placeholder={['Entrada', 'Salida']}
               />
@@ -391,9 +412,11 @@ export default function CalendarPage() {
                 className="rounded-lg"
                 suffixIcon={<HomeOutlined className="text-blue-500" />}
               >
-                {rooms.map(room => (
-                  <Option key={room.id} value={room.id}>{room.nombre}</Option>
-                ))}
+                {rooms
+                  .filter(room => !selectedRoomType || ROOM_MAPPING[selectedRoomType]?.includes(room.nombre))
+                  .map(room => (
+                    <Option key={room.id} value={room.id}>{room.nombre}</Option>
+                  ))}
               </Select>
             </Form.Item>
 
