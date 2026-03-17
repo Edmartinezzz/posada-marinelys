@@ -25,6 +25,7 @@ CREATE TABLE IF NOT EXISTS public.reservas (
   adultos INTEGER DEFAULT 1,
   ninos INTEGER DEFAULT 0,
   tipo_habitacion TEXT,
+  ciudad_origen TEXT,
   check_in TIMESTAMP WITH TIME ZONE NOT NULL,
   check_out TIMESTAMP WITH TIME ZONE NOT NULL,
   habitacion_id UUID REFERENCES public.habitaciones(id),

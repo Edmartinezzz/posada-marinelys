@@ -55,6 +55,7 @@ export default function CalendarPage() {
         adultos,
         ninos,
         tipo_habitacion,
+        ciudad_origen,
         estado,
         habitaciones(nombre)
       `);
@@ -158,6 +159,7 @@ export default function CalendarPage() {
             adultos: values.adultos,
             ninos: values.ninos,
             tipo_habitacion: values.tipo_habitacion,
+            ciudad_origen: values.ciudad_origen,
             check_in: values.fechas[0].startOf('day').add(14, 'hour').toISOString(),
             check_out: values.fechas[1].startOf('day').add(12, 'hour').toISOString(),
             habitacion_id: habitacionId,
@@ -296,6 +298,11 @@ export default function CalendarPage() {
                             {res.adultos} {res.adultos === 1 ? 'Adulto' : 'Adultos'}
                             {res.ninos > 0 && `, ${res.ninos} ${res.ninos === 1 ? 'Niño' : 'Niños'}`}
                           </Text>
+                          {res.ciudad_origen && (
+                            <Text type="secondary" className="italic">
+                              De: {res.ciudad_origen}
+                            </Text>
+                          )}
                         </Space>
                         <div className="mt-2 flex items-center gap-2 flex-wrap">
                           <Tag color="blue" className="font-bold m-0 italic">{res.tipo_habitacion}</Tag>
@@ -367,7 +374,7 @@ export default function CalendarPage() {
               <Col span={8}>
                 <Form.Item
                   name="tipo_habitacion"
-                  label={<span className="font-semibold text-gray-700">Tipo de Hospedaje</span>}
+                  label={<span className="font-semibold text-gray-700">Tipo de Habitación</span>}
                   rules={[{ required: true, message: 'Selecciona' }]}
                 >
                   <Select 
@@ -389,20 +396,8 @@ export default function CalendarPage() {
             </Row>
 
             <Form.Item
-              name="fechas"
-              label={<span className="font-semibold text-gray-700">Check-In y Check-Out</span>}
-              rules={[{ required: true, message: 'Selecciona las fechas' }]}
-            >
-              <RangePicker 
-                format="YYYY-MM-DD"
-                className="w-full h-11 rounded-lg"
-                placeholder={['Entrada', 'Salida']}
-              />
-            </Form.Item>
-
-            <Form.Item
               name="habitaciones"
-              label={<span className="font-semibold text-gray-700">Habitaciones a Reservar</span>}
+              label={<span className="font-semibold text-gray-700">Número de habitación</span>}
               rules={[{ required: true, message: 'Selecciona al menos una habitación' }]}
             >
               <Select 
@@ -418,6 +413,26 @@ export default function CalendarPage() {
                     <Option key={room.id} value={room.id}>{room.nombre}</Option>
                   ))}
               </Select>
+            </Form.Item>
+
+            <Form.Item
+              name="fechas"
+              label={<span className="font-semibold text-gray-700">Check-In y Check-Out</span>}
+              rules={[{ required: true, message: 'Selecciona las fechas' }]}
+            >
+              <RangePicker 
+                format="YYYY-MM-DD"
+                className="w-full h-11 rounded-lg"
+                placeholder={['Entrada', 'Salida']}
+              />
+            </Form.Item>
+
+            <Form.Item
+              name="ciudad_origen"
+              label={<span className="font-semibold text-gray-700">Ciudad de origen</span>}
+              rules={[{ required: true, message: 'Requerido' }]}
+            >
+              <Input prefix={<ClockCircleOutlined className="text-blue-400 rotate-90" />} placeholder="Ej: Caracas, Valencia..." size="large" className="rounded-lg" />
             </Form.Item>
 
             <Form.Item
