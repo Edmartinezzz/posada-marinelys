@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // output: 'export', // Comentado para compatibilidad con Vercel standard
+  output: 'export',
   images: {
     unoptimized: true,
   },

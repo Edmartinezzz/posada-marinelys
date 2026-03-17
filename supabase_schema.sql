@@ -49,6 +49,17 @@ ON public.reservas FOR INSERT
 TO authenticated
 WITH CHECK (true);
 
+CREATE POLICY "Los usuarios autenticados pueden eliminar reservas"
+ON public.reservas FOR DELETE
+TO authenticated
+USING (true);
+
+CREATE POLICY "Los usuarios autenticados pueden actualizar reservas"
+ON public.reservas FOR UPDATE
+TO authenticated
+USING (true)
+WITH CHECK (true);
+
 -- Trigger to sync auth.users with perfiles
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER AS $$

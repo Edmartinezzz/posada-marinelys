@@ -2,12 +2,14 @@
 
 import React, { useState } from 'react';
 import { Calendar, Badge, Modal, Form, Input, Button, Upload, message as staticMessage, Typography, Card, Tag, DatePicker, Select, Row, Col, App, Space, Popconfirm } from 'antd';
-import { UploadOutlined, PhoneOutlined, UserOutlined, CalendarOutlined, ClockCircleOutlined, HomeOutlined, WhatsAppOutlined, CheckCircleOutlined, EyeOutlined, DeleteOutlined } from '@ant-design/icons';
+import { UploadOutlined, PhoneOutlined, UserOutlined, CalendarOutlined, ClockCircleOutlined, HomeOutlined, WhatsAppOutlined, CheckCircleOutlined, EyeOutlined, DeleteOutlined, FilePdfOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import type { Dayjs } from 'dayjs';
 import AppLayout from '@/components/AppLayout';
 
 import { supabase } from '@/lib/supabase';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 const { Title, Text } = Typography;
 const { RangePicker } = DatePicker;
@@ -32,6 +34,9 @@ export default function CalendarPage() {
   const [currentView, setCurrentView] = useState<'details' | 'form'>('form');
   const [selectedRoomType, setSelectedRoomType] = useState<string | null>(null);
   const [selectedDates, setSelectedDates] = useState<[Dayjs, Dayjs] | null>(null);
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+  const [exportDates, setExportDates] = useState<[Dayjs, Dayjs] | null>(null);
+  const [exportLoading, setExportLoading] = useState(false);
 
   // Load data on mount
   React.useEffect(() => {
@@ -219,6 +224,122 @@ export default function CalendarPage() {
     }
   };
 
+  const handleExport = () => {
+    if (!exportDates || !exportDates[0] || !exportDates[1]) {
+      message.warning('Por favor selecciona un rango de fechas');
+      return;
+    }
+
+    setExportLoading(true);
+    try {
+      const [startDate, endDate] = exportDates;
+
+      // 1. Filter reservations that overlap the selected range
+      const reservedInRange = occupiedDates.filter(r => {
+        const checkIn = dayjs(r.check_in);
+        const checkOut = dayjs(r.check_out);
+        return checkIn.isBefore(endDate, 'day') && checkOut.isAfter(startDate, 'day');
+      });
+
+      // 2. Find available rooms (no reservation overlapping range)
+      const occupiedRoomIds = new Set(reservedInRange.map(r => r.habitacion_id));
+      const availableRooms = rooms.filter(r => !occupiedRoomIds.has(r.id));
+
+      // 3. Generate PDF
+      const doc = new jsPDF();
+      const pageWidth = doc.internal.pageSize.getWidth();
+
+      // Header
+      doc.setFillColor(30, 58, 138); // Blue-900
+      doc.rect(0, 0, pageWidth, 28, 'F');
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(16);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Posada Marinelys', pageWidth / 2, 12, { align: 'center' });
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+      doc.text(`Reporte de disponibilidad: ${startDate.format('DD/MM/YYYY')} al ${endDate.format('DD/MM/YYYY')}`, pageWidth / 2, 22, { align: 'center' });
+
+      doc.setTextColor(0, 0, 0);
+      let currentY = 38;
+
+      // Section 1: Reserved Rooms
+      doc.setFontSize(13);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(185, 28, 28); // Red
+      doc.text(`Habitaciones Reservadas (${reservedInRange.length})`, 14, currentY);
+      currentY += 4;
+
+      if (reservedInRange.length > 0) {
+        autoTable(doc, {
+          startY: currentY,
+          head: [['Habitacion', 'Cliente', 'Tipo', 'Check-In', 'Check-Out', 'Estado']],
+          body: reservedInRange.map(r => [
+            (r.habitaciones as any)?.nombre || 'N/A',
+            r.cliente_nombre,
+            r.tipo_habitacion || '-',
+            dayjs(r.check_in).format('DD/MM/YY'),
+            dayjs(r.check_out).format('DD/MM/YY'),
+            r.estado === 'verificado' ? 'Confirmado' : 'Pendiente',
+          ]),
+          headStyles: { fillColor: [185, 28, 28], textColor: 255, fontStyle: 'bold' },
+          alternateRowStyles: { fillColor: [254, 242, 242] },
+          styles: { fontSize: 9, cellPadding: 3 },
+          margin: { left: 14, right: 14 },
+        });
+        currentY = (doc as any).lastAutoTable.finalY + 10;
+      } else {
+        doc.setFontSize(9);
+        doc.setFont('helvetica', 'italic');
+        doc.setTextColor(100, 100, 100);
+        doc.text('No hay habitaciones reservadas en este periodo.', 14, currentY + 8);
+        currentY += 16;
+      }
+
+      // Section 2: Available Rooms
+      doc.setFontSize(13);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(21, 128, 61); // Green
+      doc.text(`Habitaciones Disponibles (${availableRooms.length})`, 14, currentY);
+      currentY += 4;
+
+      if (availableRooms.length > 0) {
+        autoTable(doc, {
+          startY: currentY,
+          head: [['Habitacion']],
+          body: availableRooms.map(r => [r.nombre]),
+          headStyles: { fillColor: [21, 128, 61], textColor: 255, fontStyle: 'bold' },
+          alternateRowStyles: { fillColor: [240, 253, 244] },
+          styles: { fontSize: 9, cellPadding: 3 },
+          margin: { left: 14, right: 14 },
+          columnStyles: { 0: { cellWidth: 60 } },
+        });
+      } else {
+        doc.setFontSize(9);
+        doc.setFont('helvetica', 'italic');
+        doc.setTextColor(100, 100, 100);
+        doc.text('No hay habitaciones disponibles en este periodo.', 14, currentY + 8);
+      }
+
+      // Footer
+      const pageCount = doc.internal.pages.length - 1;
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(150, 150, 150);
+      doc.text(`Generado el ${dayjs().format('DD/MM/YYYY')} - Posada Marinelys | Página ${pageCount}`, pageWidth / 2, doc.internal.pageSize.getHeight() - 8, { align: 'center' });
+
+      // Download
+      doc.save(`reporte-posada-${startDate.format('DD-MM')}-al-${endDate.format('DD-MM-YYYY')}.pdf`);
+      setIsExportModalOpen(false);
+      message.success('Reporte PDF generado exitosamente');
+    } catch (err: any) {
+      console.error('Error generating PDF:', err);
+      message.error('Error al generar el PDF');
+    } finally {
+      setExportLoading(false);
+    }
+  };
+
   const handleCancel = () => {
     setIsModalOpen(false);
     if (currentView === 'form') form.resetFields();
@@ -247,9 +368,21 @@ export default function CalendarPage() {
             <Title level={2} className="!mb-0 !text-blue-900">Gestión de Disponibilidad</Title>
             <Text type="secondary">Organiza las estadías y habitaciones de la posada</Text>
           </div>
-          <div className="flex gap-2">
-            <Tag color="error" className="px-4 py-1 rounded-full font-medium">Ocupado</Tag>
-            <Tag color="success" className="px-4 py-1 rounded-full font-medium">Disponible</Tag>
+          <div className="flex items-center gap-3">
+            <div className="flex gap-2">
+              <Tag color="error" className="px-4 py-1 rounded-full font-medium">Ocupado</Tag>
+              <Tag color="processing" className="px-4 py-1 rounded-full font-medium">Salida</Tag>
+              <Tag color="success" className="px-4 py-1 rounded-full font-medium">Disponible</Tag>
+            </div>
+            <Button
+              type="primary"
+              icon={<FilePdfOutlined />}
+              onClick={() => setIsExportModalOpen(true)}
+              className="!bg-emerald-600 hover:!bg-emerald-700 !border-emerald-600 h-9 font-semibold shadow-md shadow-emerald-200"
+              size="middle"
+            >
+              Exportar PDF
+            </Button>
           </div>
         </header>
 
@@ -563,6 +696,55 @@ export default function CalendarPage() {
           margin-bottom: 0 !important;
         }
       `}</style>
+
+      {/* Export PDF Modal */}
+      <Modal
+        title={
+          <div className="flex items-center gap-2 text-emerald-700 border-b pb-3">
+            <FilePdfOutlined className="text-xl" />
+            <span className="text-lg font-bold">Exportar Reporte PDF</span>
+          </div>
+        }
+        open={isExportModalOpen}
+        onCancel={() => { setIsExportModalOpen(false); setExportDates(null); }}
+        footer={null}
+        centered
+        width={420}
+        className="booking-modal"
+      >
+        <div className="py-6 space-y-5">
+          <div>
+            <Text className="font-semibold text-gray-700 block mb-2">
+              Selecciona el rango de fechas del reporte:
+            </Text>
+            <RangePicker
+              format="DD/MM/YYYY"
+              className="w-full h-11 rounded-lg"
+              placeholder={['Fecha inicio', 'Fecha fin']}
+              onChange={(dates) => setExportDates(dates as [Dayjs, Dayjs])}
+            />
+          </div>
+          <div className="bg-emerald-50 border border-emerald-100 rounded-xl p-3">
+            <Text className="text-emerald-800 text-xs leading-relaxed">
+              <strong>El PDF incluirá:</strong>
+              <br />• Habitaciones reservadas con datos del cliente
+              <br />• Habitaciones disponibles en ese período
+            </Text>
+          </div>
+          <Button
+            type="primary"
+            block
+            size="large"
+            icon={<FilePdfOutlined />}
+            onClick={handleExport}
+            loading={exportLoading}
+            disabled={!exportDates}
+            className="!bg-emerald-600 hover:!bg-emerald-700 !border-emerald-600 h-12 font-bold rounded-xl"
+          >
+            Generar y Descargar PDF
+          </Button>
+        </div>
+      </Modal>
     </AppLayout>
   );
 }
