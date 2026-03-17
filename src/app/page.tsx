@@ -31,6 +31,7 @@ export default function CalendarPage() {
   const [loading, setLoading] = useState(false);
   const [currentView, setCurrentView] = useState<'details' | 'form'>('form');
   const [selectedRoomType, setSelectedRoomType] = useState<string | null>(null);
+  const [selectedDates, setSelectedDates] = useState<[Dayjs, Dayjs] | null>(null);
 
   // Load data on mount
   React.useEffect(() => {
@@ -118,11 +119,13 @@ export default function CalendarPage() {
     } else {
       // If empty, show new form directly
       setCurrentView('form');
+      const defaultRange: [Dayjs, Dayjs] = [date.startOf('day'), date.add(1, 'day').startOf('day')];
       form.setFieldsValue({
-        fechas: [date.startOf('day'), date.add(1, 'day').startOf('day')],
+        fechas: defaultRange,
         tipo_habitacion: null,
         habitaciones: []
       });
+      setSelectedDates(defaultRange);
       setSelectedRoomType(null);
     }
     setIsModalOpen(true);
@@ -264,11 +267,13 @@ export default function CalendarPage() {
               setCurrentView('form');
               // Delay to allow Form to mount
               setTimeout(() => {
+                const defaultRange: [Dayjs, Dayjs] = [selectedDate?.startOf('day') || dayjs().startOf('day'), (selectedDate?.add(1, 'day').startOf('day') || dayjs().add(1, 'day').startOf('day'))];
                 form.setFieldsValue({
-                  fechas: [selectedDate?.startOf('day'), selectedDate?.add(1, 'day').startOf('day')],
+                  fechas: defaultRange,
                   tipo_habitacion: null,
                   habitaciones: []
                 });
+                setSelectedDates(defaultRange);
                 setSelectedRoomType(null);
               }, 0);
             }}
@@ -416,7 +421,30 @@ export default function CalendarPage() {
                 suffixIcon={<HomeOutlined className="text-blue-500" />}
               >
                 {rooms
-                  .filter(room => !selectedRoomType || ROOM_MAPPING[selectedRoomType]?.includes(room.nombre))
+                  .filter(room => {
+                    // 1. Filter by room type
+                    const matchesType = !selectedRoomType || ROOM_MAPPING[selectedRoomType]?.includes(room.nombre);
+                    if (!matchesType) return false;
+
+                    // 2. Filter by availability (overlap check)
+                    if (selectedDates && selectedDates[0] && selectedDates[1]) {
+                      const newStart = selectedDates[0];
+                      const newEnd = selectedDates[1];
+
+                      const isOccupied = occupiedDates.some(res => {
+                        if (res.habitacion_id !== room.id) return false;
+                        
+                        const existingStart = dayjs(res.check_in);
+                        const existingEnd = dayjs(res.check_out);
+
+                        // Overlap if (newStart < existingEnd) AND (existingStart < newEnd)
+                        // This accounts for 12:00 checkout and 14:00 check-in
+                        return newStart.isBefore(existingEnd, 'day') && existingStart.isBefore(newEnd, 'day');
+                      });
+                      return !isOccupied;
+                    }
+                    return true;
+                  })
                   .map(room => (
                     <Option key={room.id} value={room.id}>{room.nombre}</Option>
                   ))}
@@ -432,6 +460,10 @@ export default function CalendarPage() {
                 format="YYYY-MM-DD"
                 className="w-full h-11 rounded-lg"
                 placeholder={['Entrada', 'Salida']}
+                onChange={(dates) => {
+                  setSelectedDates(dates as [Dayjs, Dayjs]);
+                  form.setFieldsValue({ habitaciones: [] });
+                }}
               />
             </Form.Item>
 
