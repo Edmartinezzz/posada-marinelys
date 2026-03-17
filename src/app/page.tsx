@@ -70,21 +70,30 @@ export default function CalendarPage() {
   const cellRender = (current: Dayjs, info: any) => {
     if (info.type !== 'date') return info.originNode;
     
-    const stringDate = current.format('YYYY-MM-DD');
-    const reservationsOnDay = occupiedDates.filter(r => 
+    const staying = occupiedDates.filter(r => 
       dayjs(r.check_in).isSame(current, 'day') || 
-      dayjs(r.check_out).isSame(current, 'day') ||
       (current.isAfter(dayjs(r.check_in), 'day') && current.isBefore(dayjs(r.check_out), 'day'))
     );
 
-    if (reservationsOnDay.length > 0) {
+    const leaving = occupiedDates.filter(r => 
+      dayjs(r.check_out).isSame(current, 'day')
+    );
+
+    if (staying.length > 0 || leaving.length > 0) {
       return (
         <div className="flex flex-col gap-1 overflow-hidden">
-          {reservationsOnDay.map((r, i) => (
+          {staying.map((r, i) => (
             <Badge 
-              key={i} 
+              key={`stay-${i}`} 
               status="error" 
               text={<span className="text-[10px] font-bold text-red-600 truncate">Ocupado</span>} 
+            />
+          ))}
+          {leaving.map((r, i) => (
+            <Badge 
+              key={`leave-${i}`} 
+              status="processing" 
+              text={<span className="text-[10px] font-bold text-blue-600 truncate">Salida</span>} 
             />
           ))}
         </div>
@@ -305,10 +314,9 @@ export default function CalendarPage() {
                           )}
                         </Space>
                         <div className="mt-2 flex items-center gap-2 flex-wrap">
-                          <Tag color="blue" className="font-bold m-0 italic">{res.tipo_habitacion}</Tag>
                           <Tag color="orange" className="font-bold m-0">{(res.habitaciones as any)?.nombre}</Tag>
                           <Text className="text-[11px] font-medium bg-gray-100 px-2 py-0.5 rounded text-gray-600">
-                            {dayjs(res.check_in).format('DD/MM')} → {dayjs(res.check_out).format('DD/MM')}
+                            {dayjs(res.check_in).isSame(selectedDate, 'day') ? 'Entrada' : dayjs(res.check_out).isSame(selectedDate, 'day') ? 'Salida' : 'Estadía'}
                           </Text>
                         </div>
                       </Space>
