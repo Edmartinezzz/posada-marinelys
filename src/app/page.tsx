@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Calendar, Badge, Modal, Form, Input, Button, Upload, message as staticMessage, Typography, Card, Tag, DatePicker, Select, Row, Col, App, Space } from 'antd';
-import { UploadOutlined, PhoneOutlined, UserOutlined, CalendarOutlined, ClockCircleOutlined, HomeOutlined, WhatsAppOutlined, CheckCircleOutlined, EyeOutlined } from '@ant-design/icons';
+import { Calendar, Badge, Modal, Form, Input, Button, Upload, message as staticMessage, Typography, Card, Tag, DatePicker, Select, Row, Col, App, Space, Popconfirm } from 'antd';
+import { UploadOutlined, PhoneOutlined, UserOutlined, CalendarOutlined, ClockCircleOutlined, HomeOutlined, WhatsAppOutlined, CheckCircleOutlined, EyeOutlined, DeleteOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import type { Dayjs } from 'dayjs';
 import AppLayout from '@/components/AppLayout';
@@ -199,6 +199,26 @@ export default function CalendarPage() {
     }
   };
 
+  const handleDelete = async (id: string) => {
+    try {
+      setLoading(true);
+      const { error } = await supabase
+        .from('reservas')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      message.success('Reserva eliminada exitosamente');
+      fetchData(); // Refresh calendar updates
+    } catch (error: any) {
+      console.error('Error deleting:', error);
+      message.error('Error al eliminar reserva: ' + (error.message || 'Error desconocido'));
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleCancel = () => {
     setIsModalOpen(false);
     if (currentView === 'form') form.resetFields();
@@ -325,11 +345,31 @@ export default function CalendarPage() {
                           </Text>
                         </div>
                       </Space>
-                      {res.estado === 'verificado' ? (
-                        <Tag color="success" icon={<CheckCircleOutlined />}>Confirmado</Tag>
-                      ) : (
-                        <Tag color="warning" icon={<ClockCircleOutlined />}>Pendiente</Tag>
-                      )}
+                      <div className="flex flex-col items-end gap-2">
+                        {res.estado === 'verificado' ? (
+                          <Tag color="success" icon={<CheckCircleOutlined />}>Confirmado</Tag>
+                        ) : (
+                          <Tag color="warning" icon={<ClockCircleOutlined />}>Pendiente</Tag>
+                        )}
+                        <Popconfirm
+                          title="Eliminar reserva"
+                          description="¿Estás seguro de que deseas eliminar esta reserva?"
+                          onConfirm={() => handleDelete(res.id)}
+                          okText="Sí, eliminar"
+                          cancelText="No"
+                          okButtonProps={{ danger: true }}
+                        >
+                          <Button 
+                            type="text" 
+                            danger 
+                            icon={<DeleteOutlined />} 
+                            size="small"
+                            className="hover:bg-red-50"
+                          >
+                            Eliminar
+                          </Button>
+                        </Popconfirm>
+                      </div>
                     </div>
                   </Card>
                 ))}
