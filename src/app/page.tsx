@@ -502,7 +502,7 @@ export default function CalendarPage() {
                 )
                 .map((res, idx) => (
                   <Card key={idx} size="small" className="border-l-4 border-l-blue-600 shadow-sm hover:shadow-md transition-shadow">
-                    <div className="flex justify-between items-start">
+                    <div className="flex justify-between items-start gap-4">
                       <Space orientation="vertical" size={2}>
                         <Text strong className="text-blue-900 text-base">{res.cliente_nombre}</Text>
                         <Space className="text-xs" separator={<span className="text-gray-300">|</span>}>
@@ -533,34 +533,32 @@ export default function CalendarPage() {
                         ) : (
                           <Tag color="warning" icon={<ClockCircleOutlined />}>Pendiente</Tag>
                         )}
-                        <Space>
+                        <Button 
+                          type="text" 
+                          icon={<EyeOutlined />} 
+                          onClick={() => handleEdit(res)}
+                          className="text-blue-600 hover:bg-blue-50"
+                        >
+                          Editar
+                        </Button>
+                        <Popconfirm
+                          title="Eliminar reserva"
+                          description="¿Estás seguro de que deseas eliminar esta reserva?"
+                          onConfirm={() => handleDelete(res.id)}
+                          okText="Sí, eliminar"
+                          cancelText="No"
+                          okButtonProps={{ danger: true }}
+                        >
                           <Button 
                             type="text" 
-                            icon={<EyeOutlined />} 
-                            onClick={() => handleEdit(res)}
-                            className="text-blue-600 hover:bg-blue-50"
+                            danger 
+                            icon={<DeleteOutlined />} 
+                            size="small"
+                            className="hover:bg-red-50"
                           >
-                            Editar
+                            Eliminar
                           </Button>
-                          <Popconfirm
-                            title="Eliminar reserva"
-                            description="¿Estás seguro de que deseas eliminar esta reserva?"
-                            onConfirm={() => handleDelete(res.id)}
-                            okText="Sí, eliminar"
-                            cancelText="No"
-                            okButtonProps={{ danger: true }}
-                          >
-                            <Button 
-                              type="text" 
-                              danger 
-                              icon={<DeleteOutlined />} 
-                              size="small"
-                              className="hover:bg-red-50"
-                            >
-                              Eliminar
-                            </Button>
-                          </Popconfirm>
-                        </Space>
+                        </Popconfirm>
                       </div>
                     </div>
                   </Card>
