@@ -37,6 +37,7 @@ export default function CalendarPage() {
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [exportDates, setExportDates] = useState<[Dayjs, Dayjs] | null>(null);
   const [exportLoading, setExportLoading] = useState(false);
+  const [editingReservationId, setEditingReservationId] = useState<string | null>(null);
 
   // Load data on mount
   React.useEffect(() => {
@@ -92,14 +93,14 @@ export default function CalendarPage() {
             <Badge 
               key={`stay-${i}`} 
               status="error" 
-              text={<span className="text-[10px] font-bold text-red-600 truncate">Ocupado</span>} 
+              text={<span className="hidden sm:inline-block text-[10px] font-bold text-red-600 truncate">Ocupado</span>} 
             />
           ))}
           {leaving.map((r, i) => (
             <Badge 
               key={`leave-${i}`} 
               status="processing" 
-              text={<span className="text-[10px] font-bold text-blue-600 truncate">Salida</span>} 
+              text={<span className="hidden sm:inline-block text-[10px] font-bold text-blue-600 truncate">Salida</span>} 
             />
           ))}
         </div>
@@ -124,6 +125,7 @@ export default function CalendarPage() {
     } else {
       // If empty, show new form directly
       setCurrentView('form');
+      setEditingReservationId(null);
       const defaultRange: [Dayjs, Dayjs] = [date.startOf('day'), date.add(1, 'day').startOf('day')];
       form.setFieldsValue({
         fechas: defaultRange,
@@ -134,6 +136,31 @@ export default function CalendarPage() {
       setSelectedRoomType(null);
     }
     setIsModalOpen(true);
+  };
+
+  const handleEdit = (res: any) => {
+    setEditingReservationId(res.id);
+    setCurrentView('form');
+    
+    const checkIn = dayjs(res.check_in);
+    const checkOut = dayjs(res.check_out);
+    
+    setSelectedRoomType(res.tipo_habitacion);
+    setSelectedDates([checkIn, checkOut]);
+    
+    // Small delay to ensure form fields are ready
+    setTimeout(() => {
+      form.setFieldsValue({
+        nombre: res.cliente_nombre,
+        whatsapp: res.cliente_whatsapp,
+        adultos: res.adultos,
+        ninos: res.ninos,
+        tipo_habitacion: res.tipo_habitacion,
+        habitaciones: [res.habitacion_id],
+        fechas: [checkIn, checkOut],
+        ciudad_origen: res.ciudad_origen,
+      });
+    }, 0);
   };
 
   const handleOk = async () => {
@@ -166,11 +193,11 @@ export default function CalendarPage() {
       // 2. Get current user
       const { data: { user } } = await supabase.auth.getUser();
 
-      // 3. Save reservations (Multiple rooms)
-      const reservationPromises = values.habitaciones.map((habitacionId: string) => 
-        supabase
+      // 3. Save or Update reservations
+      if (editingReservationId) {
+        const { error: updateError } = await supabase
           .from('reservas')
-          .insert({
+          .update({
             cliente_nombre: values.nombre,
             cliente_whatsapp: values.whatsapp,
             adultos: values.adultos,
@@ -179,20 +206,42 @@ export default function CalendarPage() {
             ciudad_origen: values.ciudad_origen,
             check_in: values.fechas[0].startOf('day').add(14, 'hour').toISOString(),
             check_out: values.fechas[1].startOf('day').add(12, 'hour').toISOString(),
-            habitacion_id: habitacionId,
-            comprobante_url: publicUrl,
-            registrado_por: user?.id,
-            subido_por: user?.id,
-            estado: 'pendiente'
+            habitacion_id: values.habitaciones[0], // Only update the first one chosen in edit mode
+            comprobante_url: publicUrl || undefined, // Only update if new file uploaded
           })
-      );
+          .eq('id', editingReservationId);
 
-      const results = await Promise.all(reservationPromises);
-      const errors = results.filter(r => r.error);
-      if (errors.length > 0) throw errors[0].error;
+        if (updateError) throw updateError;
+        message.success(`Reserva actualizada exitosamente`);
+      } else {
+        const reservationPromises = values.habitaciones.map((habitacionId: string) => 
+          supabase
+            .from('reservas')
+            .insert({
+              cliente_nombre: values.nombre,
+              cliente_whatsapp: values.whatsapp,
+              adultos: values.adultos,
+              ninos: values.ninos,
+              tipo_habitacion: values.tipo_habitacion,
+              ciudad_origen: values.ciudad_origen,
+              check_in: values.fechas[0].startOf('day').add(14, 'hour').toISOString(),
+              check_out: values.fechas[1].startOf('day').add(12, 'hour').toISOString(),
+              habitacion_id: habitacionId,
+              comprobante_url: publicUrl,
+              registrado_por: user?.id,
+              subido_por: user?.id,
+              estado: 'pendiente'
+            })
+        );
 
-      message.success(`${values.habitaciones.length} habitacion(es) reservada(s) exitosamente`);
+        const results = await Promise.all(reservationPromises);
+        const errors = results.filter(r => r.error);
+        if (errors.length > 0) throw errors[0].error;
+        message.success(`${values.habitaciones.length} habitacion(es) reservada(s) exitosamente`);
+      }
+
       setIsModalOpen(false);
+      setEditingReservationId(null);
       if (currentView === 'form') form.resetFields();
       setFileList([]);
       fetchData(); // Refresh calendar
@@ -342,6 +391,7 @@ export default function CalendarPage() {
 
   const handleCancel = () => {
     setIsModalOpen(false);
+    setEditingReservationId(null);
     if (currentView === 'form') form.resetFields();
     setFileList([]);
   };
@@ -398,7 +448,7 @@ export default function CalendarPage() {
           <div className="flex items-center space-x-2 text-blue-900 border-b pb-3">
             <CalendarOutlined className="text-xl" />
             <span className="text-lg">
-              {currentView === 'details' ? `Reservas para el ${selectedDate?.format('DD [de] MMMM')}` : 'Nueva Reserva'}
+              {currentView === 'details' ? `Reservas para el ${selectedDate?.format('DD [de] MMMM')}` : (editingReservationId ? 'Editar Reserva' : 'Nueva Reserva')}
             </span>
           </div>
         }
@@ -406,7 +456,7 @@ export default function CalendarPage() {
         onOk={currentView === 'form' ? handleOk : undefined}
         onCancel={handleCancel}
         confirmLoading={loading}
-        okText={currentView === 'form' ? "Registrar Estadía" : undefined}
+        okText={currentView === 'form' ? (editingReservationId ? "Actualizar Reserva" : "Registrar Estadía") : undefined}
         cancelText={currentView === 'form' ? "Cancelar" : "Cerrar"}
         footer={currentView === 'details' ? [
           <Button key="close" onClick={handleCancel}>Cerrar</Button>,
@@ -416,6 +466,7 @@ export default function CalendarPage() {
             className="bg-blue-900" 
             onClick={() => {
               setCurrentView('form');
+              setEditingReservationId(null);
               // Delay to allow Form to mount
               setTimeout(() => {
                 const defaultRange: [Dayjs, Dayjs] = [selectedDate?.startOf('day') || dayjs().startOf('day'), (selectedDate?.add(1, 'day').startOf('day') || dayjs().add(1, 'day').startOf('day'))];
@@ -482,24 +533,34 @@ export default function CalendarPage() {
                         ) : (
                           <Tag color="warning" icon={<ClockCircleOutlined />}>Pendiente</Tag>
                         )}
-                        <Popconfirm
-                          title="Eliminar reserva"
-                          description="¿Estás seguro de que deseas eliminar esta reserva?"
-                          onConfirm={() => handleDelete(res.id)}
-                          okText="Sí, eliminar"
-                          cancelText="No"
-                          okButtonProps={{ danger: true }}
-                        >
+                        <Space>
                           <Button 
                             type="text" 
-                            danger 
-                            icon={<DeleteOutlined />} 
-                            size="small"
-                            className="hover:bg-red-50"
+                            icon={<EyeOutlined />} 
+                            onClick={() => handleEdit(res)}
+                            className="text-blue-600 hover:bg-blue-50"
                           >
-                            Eliminar
+                            Editar
                           </Button>
-                        </Popconfirm>
+                          <Popconfirm
+                            title="Eliminar reserva"
+                            description="¿Estás seguro de que deseas eliminar esta reserva?"
+                            onConfirm={() => handleDelete(res.id)}
+                            okText="Sí, eliminar"
+                            cancelText="No"
+                            okButtonProps={{ danger: true }}
+                          >
+                            <Button 
+                              type="text" 
+                              danger 
+                              icon={<DeleteOutlined />} 
+                              size="small"
+                              className="hover:bg-red-50"
+                            >
+                              Eliminar
+                            </Button>
+                          </Popconfirm>
+                        </Space>
                       </div>
                     </div>
                   </Card>
@@ -602,11 +663,11 @@ export default function CalendarPage() {
                       const newStart = selectedDates[0];
                       const newEnd = selectedDates[1];
 
-                      const isOccupied = occupiedDates.some(res => {
-                        if (res.habitacion_id !== room.id) return false;
-                        
-                        const existingStart = dayjs(res.check_in);
-                        const existingEnd = dayjs(res.check_out);
+                        const isOccupied = occupiedDates.some(res => {
+                          if (res.habitacion_id !== room.id || res.id === editingReservationId) return false;
+                          
+                          const existingStart = dayjs(res.check_in);
+                          const existingEnd = dayjs(res.check_out);
 
                         // Overlap if (newStart < existingEnd) AND (existingStart < newEnd)
                         // This accounts for 12:00 checkout and 14:00 check-in
@@ -680,6 +741,31 @@ export default function CalendarPage() {
           border-top: 2px solid #f0f0f0 !important;
           margin: 0 !important;
           padding: 8px !important;
+        }
+        @media (max-width: 640px) {
+          .custom-calendar .ant-picker-calendar-date-content {
+            height: 45px !important;
+          }
+          .custom-calendar .ant-picker-calendar-date {
+            padding: 4px 2px !important;
+          }
+          .custom-calendar .ant-picker-calendar-date-value {
+            font-size: 12px !important;
+            margin-bottom: 2px !important;
+          }
+          .custom-calendar .ant-picker-calendar-header {
+            padding: 8px 4px !important;
+            display: flex !important;
+            flex-wrap: wrap !important;
+            justify-content: center !important;
+            gap: 4px !important;
+          }
+          .custom-calendar .ant-picker-calendar-header > div {
+            margin: 0 !important;
+          }
+          .custom-calendar .ant-picker-panel {
+            padding: 0 !important;
+          }
         }
         .custom-calendar .ant-picker-calendar-date-today {
           background-color: #f0f7ff !important;
