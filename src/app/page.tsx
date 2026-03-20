@@ -686,16 +686,34 @@ export default function CalendarPage() {
               label={<span className="font-semibold text-gray-700">Check-In y Check-Out</span>}
               rules={[{ required: true, message: 'Selecciona las fechas' }]}
             >
-              <RangePicker 
-                format="YYYY-MM-DD"
-                className="w-full h-11 rounded-lg"
-                placeholder={['Entrada', 'Salida']}
-                getPopupContainer={(trigger) => trigger.parentElement || document.body}
-                onChange={(dates) => {
-                  setSelectedDates(dates as [Dayjs, Dayjs]);
-                  form.setFieldsValue({ habitaciones: [] });
-                }}
-              />
+              <Row gutter={12}>
+                <Col span={12}>
+                  <DatePicker 
+                    placeholder="Entrada"
+                    format="YYYY-MM-DD"
+                    className="w-full h-11 rounded-lg"
+                    value={selectedDates?.[0]}
+                    onChange={(date) => {
+                      const newDates: [Dayjs, Dayjs] = [date as Dayjs, selectedDates?.[1] || (date as Dayjs).add(1, 'day')];
+                      setSelectedDates(newDates);
+                      form.setFieldsValue({ fechas: newDates, habitaciones: [] });
+                    }}
+                  />
+                </Col>
+                <Col span={12}>
+                  <DatePicker 
+                    placeholder="Salida"
+                    format="YYYY-MM-DD"
+                    className="w-full h-11 rounded-lg"
+                    value={selectedDates?.[1]}
+                    onChange={(date) => {
+                      const newDates: [Dayjs, Dayjs] = [selectedDates?.[0] || (date as Dayjs).subtract(1, 'day'), date as Dayjs];
+                      setSelectedDates(newDates);
+                      form.setFieldsValue({ fechas: newDates, habitaciones: [] });
+                    }}
+                  />
+                </Col>
+              </Row>
             </Form.Item>
 
             <Form.Item
@@ -779,37 +797,6 @@ export default function CalendarPage() {
           margin-bottom: 0 !important;
         }
         
-        /* RangePicker Mobile Fix */
-        @media (max-width: 640px) {
-          .ant-picker-dropdown .ant-picker-range-wrapper {
-            flex-direction: column !important;
-          }
-          .ant-picker-dropdown .ant-picker-panels {
-            flex-direction: column !important;
-          }
-          .ant-picker-dropdown .ant-picker-panel {
-            width: 100% !important;
-          }
-          .ant-picker-dropdown .ant-picker-content {
-            width: 100% !important;
-          }
-          /* Compact internal elements for mobile */
-          .ant-picker-dropdown .ant-picker-cell-inner {
-            width: 28px !important;
-            height: 28px !important;
-            line-height: 28px !important;
-            font-size: 11px !important;
-          }
-          .ant-picker-dropdown .ant-picker-header {
-            height: 32px !important;
-            padding: 0 4px !important;
-          }
-          .ant-picker-dropdown .ant-picker-header > button {
-            padding: 0 4px !important;
-          }
-          .ant-picker-dropdown .ant-picker-body {
-            padding: 4px !important;
-          }
         }
       `}</style>
 
