@@ -779,6 +779,22 @@ export default function CalendarPage() {
         .booking-modal .ant-modal-header {
           margin-bottom: 0 !important;
         }
+        
+        /* RangePicker Mobile Fix */
+        @media (max-width: 640px) {
+          .ant-picker-dropdown .ant-picker-range-wrapper {
+            flex-direction: column !important;
+          }
+          .ant-picker-dropdown .ant-picker-panels {
+            flex-direction: column !important;
+          }
+          .ant-picker-dropdown .ant-picker-panel {
+            width: 100% !important;
+          }
+          .ant-picker-dropdown .ant-picker-content {
+            width: 100% !important;
+          }
+        }
       `}</style>
 
       {/* Export PDF Modal */}
