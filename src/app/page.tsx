@@ -692,6 +692,7 @@ export default function CalendarPage() {
                 format="YYYY-MM-DD"
                 className="w-full h-11 rounded-lg"
                 placeholder={['Entrada', 'Salida']}
+                getPopupContainer={(trigger) => trigger.parentElement || document.body}
                 onChange={(dates) => {
                   setSelectedDates(dates as [Dayjs, Dayjs]);
                   form.setFieldsValue({ habitaciones: [] });
@@ -793,6 +794,23 @@ export default function CalendarPage() {
           }
           .ant-picker-dropdown .ant-picker-content {
             width: 100% !important;
+          }
+          /* Compact internal elements for mobile */
+          .ant-picker-dropdown .ant-picker-cell-inner {
+            width: 28px !important;
+            height: 28px !important;
+            line-height: 28px !important;
+            font-size: 11px !important;
+          }
+          .ant-picker-dropdown .ant-picker-header {
+            height: 32px !important;
+            padding: 0 4px !important;
+          }
+          .ant-picker-dropdown .ant-picker-header > button {
+            padding: 0 4px !important;
+          }
+          .ant-picker-dropdown .ant-picker-body {
+            padding: 4px !important;
           }
         }
       `}</style>
